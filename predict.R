@@ -17,6 +17,14 @@ suppressMessages(library(ggplot2))
 suppressMessages(library(gridExtra))
 suppressMessages(library(extrafont))
 
+library(grid)
+library(gridExtra)
+library(EBImage)
+library(ggplot2)
+library(rPlotter)
+library(extrafont) ## Note: Run font_import() if it has not been done yet
+
+
 ## Set seed
 set.seed(1234)
 
@@ -63,11 +71,10 @@ for (n in 1:nrow(dat_pred)) {
 ## Train Models
 ## =============================================================================
 
-ctrl <- trainControl(method = "repeatedcv",
-                     repeats = 3,
-                     number = 5)
+ctrl <- trainControl(method = "boot",
+                     number = 20)
 
-activate_core(5)
+activate_core(4)
 
 for (n_round in 1:3) {
   
@@ -114,7 +121,8 @@ for (n_round in 1:3) {
 ## =============================================================================
 
 yy_all <- rbind(melt(yy_HG),
-                melt(yy_AG))
+                melt(yy_AG),
+                melt(yy_DF))
 
 colnames(yy_all) <- c("Match", "Team", "Variable", "Goals")
 
@@ -125,6 +133,8 @@ g_density <- ggplot(yy_all, aes(x = Goals, fill = Team)) +
   theme(title = element_text(size = 18, vjust = 2),
         strip.text = element_text(size = 16),
         axis.text = element_text(size = 12),
+        axis.title.y = element_text(vjust = 0.75),
+        axis.title.x = element_text(vjust = -0.5),
         legend.text = element_text(size = 12)) +
   ggtitle("Distribution of Predicted Outcomes (Goals) for Each Team")
 
@@ -135,6 +145,8 @@ g_boxplot <- ggplot(yy_all, aes(x = Team, y = Goals, fill = Team)) +
   theme(title = element_text(size = 18, vjust = 2),
         strip.text = element_text(size = 16),
         axis.text = element_text(size = 12),
+        axis.title.y = element_text(vjust = 0.75),
+        axis.title.x = element_text(vjust = -0.5),
         legend.text = element_text(size = 12)) +
   ggtitle("Boxplots of Predicted Outcomes (Goals) for Each Team")
 
@@ -174,30 +186,36 @@ colnames(output) <- c("Data", "Date", "Home", "Away",
 now <- Sys.time()
 now <- gsub(":", "",now)
 now <- gsub(" ", "_",now)
-tmp_name <- paste0("./output/",now, "_pred.pdf")
+name_box <- paste0("./output/",now, "_boxplot.png")
+name_dis <- paste0("./output/",now, "_dist.png")
+name_tab <- paste0("./output/",now, "_summary.png")
+name_pdf <- paste0("./output/",now, "_pred.pdf")
 
 ## Load Extra Fonts
 suppressMessages(loadfonts())
 
 ## Define output size
 row_max <- max(which(output$Data == "Predictions"))
-pdf_h <- 7
-pdf_w <- 14
+pdf_w <- 12
+pdf_h <- 12
 
 ## Print PDF
-pdf(file = tmp_name, height = pdf_h, width = pdf_w, 
+pdf(file = name_pdf, height = pdf_h, width = pdf_w, 
     family = "Ubuntu", title = "WC2014 Predictions by Jo-fai Chow")
-
-## Print boxplot
-print(g_boxplot)
-
-## Print Density plot
-print(g_density)
 
 ## Print Summary Table
 grid.newpage()
-grid.table(output[1:row_max,], show.rownames = F)
+g_table <- grid.table(output[1:row_max,], show.rownames = F)
+
+## Print boxplot and density
+grid.newpage()
+pushViewport(viewport(layout = grid.layout(1000, 1000)))
+vplayout <- function(x, y) viewport(layout.pos.row = x, layout.pos.col = y)
+print(g_boxplot, vp = vplayout(1:500, 1:1000))
+print(g_density, vp = vplayout(501:1000, 1:1000))
+
 
 ## Close and save
 dev.off()
 
+if (Sys.info()[1] == "Linux") embed_fonts(name_pdf)
