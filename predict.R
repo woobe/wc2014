@@ -4,6 +4,7 @@
 
 ## Initiate
 setwd("/media/SUPPORT/Repo/wc2014")
+suppressMessages(library(bib))
 suppressMessages(library(xlsx))
 suppressMessages(library(caret))
 suppressMessages(library(e1071))
@@ -44,8 +45,8 @@ dat[, 4:15] <- predict(pp, dat[, 4:15])
 ## =============================================================================
 
 ## Define Training Set Here!
-#rng_train <- -2:-4   ## using others' predictions for future fixtures as train
-rng_train <- -2:-4
+rng_train <- -2:-4 # for 13 June
+
 
 ## Split train/test
 x_train <- dat[rng_train, 4:15]
@@ -62,34 +63,44 @@ for (n in 1:nrow(dat_pred)) {
 ## Train Models
 ## =============================================================================
 
+ctrl <- trainControl(method = "repeatedcv",
+                     repeats = 3,
+                     number = 5)
+
+activate_core(5)
+
 for (n_round in 1:3) {
-  
-  ## Empty Shell
-  tmp_yy <- matrix(NA, nrow = nrow(x_test), ncol = 5)
   
   ## Get y_train
   y_train <- dat[rng_train, (15+n_round)]
   
-  ## Train SVM
-  model <- svm(x_train, y_train)
-  tmp_yy[, 1] <- predict(model, x_test)
-
-  ## Train RF
-  model <- randomForest(x_train, y_train)
-  tmp_yy[, 2] <- predict(model, x_test)
+  ## List of Models
+  lst_model <- c("svmRadial", "svmLinear", "rf", "superpc", "relaxo", "pcr", 
+                 "penalized", "neuralnet", "lars", "lars2", "rvmRadial",
+                 "rvmLinear", "foba", "icr", "ridge", "M5", "krlsRadial", 
+                 "cubist", "spls", "pcaNNet", "nnet", "avNNet",
+                 "glmboost", "xyf", "kknn", "gaussprRadial", "glmnet",
+                 "earth", "dnn", "bayesglm", "RRFglobal",
+                 "knn")
   
-  ## Train Cubist
-  model <- cubist(x_train, y_train, committees = 100)
-  tmp_yy[, 3] <- predict(model, x_test)
+  ## Empty Shell
+  tmp_yy <- matrix(NA, nrow = nrow(x_test), ncol = length(lst_model))
   
-  ## Train Earth
-  model <- earth(x_train, y_train)
-  tmp_yy[, 4] <- predict(model, x_test)
-  
-  ## Train knn
-  tmp_df <- data.frame(x_train, y=y_train)
-  model <- kknn(y~., tmp_df, x_test)
-  tmp_yy[, 5] <- model$fitted.values
+  ## Main Loop
+  for (n_model in 1:length(lst_model)) {
+    
+    ## Display
+    cat("Now training round", n_round, "model", n_model, lst_model[n_model], "...\n")
+    
+    ## Train caret model
+    suppressWarnings(
+      model <- train(x_train, y_train, trControl = ctrl, tuneLength = 5,
+                     method = lst_model[n_model]))
+    
+    ## Use model
+    tmp_yy[, n_model] <- predict(model, x_test)    
+    
+  }  
   
   ## Save
   if (n_round == 1) yy_HG <- data.frame(Match = dat_pred$Match, Team = "Home", tmp_yy)
@@ -103,18 +114,29 @@ for (n_round in 1:3) {
 ## =============================================================================
 
 yy_all <- rbind(melt(yy_HG),
-                melt(yy_AG),
-                melt(yy_DF))
+                melt(yy_AG))
+
 colnames(yy_all) <- c("Match", "Team", "Variable", "Goals")
 
-g <- ggplot(yy_all, aes(x = Team, y = Goals, fill = Team)) + 
+g_density <- ggplot(yy_all, aes(x = Goals, fill = Team)) + 
+  geom_density() +
+  facet_grid(Team ~ Match) +
+  scale_fill_manual(name = "Team", values = c("#34B2CF", "#FCCB05", "#FB0101")) +
+  theme(title = element_text(size = 18, vjust = 2),
+        strip.text = element_text(size = 16),
+        axis.text = element_text(size = 12),
+        legend.text = element_text(size = 12)) +
+  ggtitle("Distribution of Predicted Outcomes (Goals) for Each Team")
+
+g_boxplot <- ggplot(yy_all, aes(x = Team, y = Goals, fill = Team)) + 
   geom_boxplot() +
   scale_fill_manual(name = "Team", values = c("#34B2CF", "#FCCB05", "#FB0101")) +
   facet_grid(~ Match)  +
-  theme(title = element_text(size = 16),
-        strip.text = element_text(size = 18),
+  theme(title = element_text(size = 18, vjust = 2),
+        strip.text = element_text(size = 16),
         axis.text = element_text(size = 12),
-        legend.text = element_text(size = 12))
+        legend.text = element_text(size = 12)) +
+  ggtitle("Boxplots of Predicted Outcomes (Goals) for Each Team")
 
 
 ## =============================================================================
@@ -159,12 +181,23 @@ suppressMessages(loadfonts())
 
 ## Define output size
 row_max <- max(which(output$Data == "Predictions"))
-pdf_h <- min(c(max(c(row_max * 0.4, 7)), 28))
+pdf_h <- 7
 pdf_w <- 14
 
 ## Print PDF
 pdf(file = tmp_name, height = pdf_h, width = pdf_w, 
     family = "Ubuntu", title = "WC2014 Predictions by Jo-fai Chow")
+
+## Print boxplot
+print(g_boxplot)
+
+## Print Density plot
+print(g_density)
+
+## Print Summary Table
+grid.newpage()
 grid.table(output[1:row_max,], show.rownames = F)
-print(g)
+
+## Close and save
 dev.off()
+
