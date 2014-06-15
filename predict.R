@@ -4,7 +4,9 @@
 
 ## Initiate
 rm(list=ls())
+#setwd("D:/Repo/wc2014")
 setwd("/media/SUPPORT/Repo/wc2014")
+
 suppressMessages(library(bib))
 suppressMessages(library(xlsx))
 suppressMessages(library(caret))
@@ -71,9 +73,12 @@ dat_future_swap$PRED_DIFF <- dat_future_swap$PRED_DIFF * -1
 colnames(dat_future_swap) <- colnames(dat)
 
 ## Combine
-dat_combine <- rbind(dat_train, dat_train_swap,
-                     dat_predict, dat_predict_swap,
-                     dat_future, dat_future_swap)
+dat_combine <- rbind(dat_train, 
+                     dat_predict,
+                     dat_future,
+                     dat_train_swap,
+                     dat_predict_swap,
+                     dat_future_swap)
 
 ## =============================================================================
 ## Normalise Data
@@ -108,8 +113,8 @@ activate_core(7)
 
 ## Global variables
 ctrl <- trainControl(method = "repeatedcv",
-                     repeats = 3,
-                     number = 3,
+                     repeats = 1,
+                     number = 5,
                      allowParallel = FALSE)
 
 ## Train Function
@@ -145,10 +150,10 @@ train_caret <- function(dat_combine, pred_type, ctrl, lst_model, n_model, p_trai
 #                    "lars", "lars2", "rvmRadial", "foba", "icr", 
 #                    "ridge", "M5", "krlsRadial", "spls", "pcaNNet", "nnet", 
 #                    "avNNet", "glmboost", "kknn", "gaussprRadial", "glmnet",
-#                    "bayesglm", "RRFglobal", "knn"), 3)  
+#                    "bayesglm", "RRFglobal", "knn"), 1)  
 
 lst_model <- rep(c("rf", "earth", "cubist", "penalized", "neuralnet",
-                   "lars2", "rvmRadial", "M5", "glmboost", "RRFglobal"), each = 10)  
+                  "lars2", "rvmRadial", "M5", "glmboost", "RRFglobal"), 100)  
 
 # lst_model <- rep(c("rf", "earth", "cubist", "svmRadial", "dnn", "bayesglm", "RRFglobal",
 #                    "foba", "icr", "ridge", "M5", "spls"), 3)
@@ -174,7 +179,7 @@ tmp_yy <- foreach(n_model = 1:length(lst_model),
 
 ## Split into Home/Away
 tmp_yy <- data.frame(Match = dat_pred$Match, Team = rep(c('Team1','Team2'), each = nrow(dat_predict)), tmp_yy)
-colnames(tmp_yy) <- c("Match", "Team", lst_model)
+#colnames(tmp_yy) <- c("Match", "Team", lst_model[1:dim(tmp_yy)[2]])
 yy_HG <- tmp_yy[1:nrow(dat_predict), ]
 yy_AG <- tmp_yy[-1:-nrow(dat_predict), ]
 
@@ -201,20 +206,20 @@ tmp_yy <- foreach(n_model = 1:length(lst_model),
                   .multicombine = TRUE,
                   .errorhandling = 'remove',
                   .packages = 'caret') %dopar%
-  train_caret(dat_combine, pred_type = 'Diff', ctrl, lst_model, n_model, p_train = 0.75)
+  train_caret(dat_combine[1:48,], pred_type = 'Diff', ctrl, lst_model, n_model)
 
 ## Split into Home/Away
-tmp_yy <- data.frame(Match = dat_pred$Match, Team = rep(c('Team1','Team2'), each = nrow(dat_predict)), tmp_yy)
-colnames(tmp_yy) <- c("Match", "Team", lst_model)
+tmp_yy <- data.frame(Match = dat_pred$Match, Team = 'Pred_Diff', tmp_yy)
+#colnames(tmp_yy) <- c("Match", "Team", lst_model[1:dim(tmp_yy)[2]])
 
 ## Convert Away Goal Diff to Home Goal Diff
-tmp_yy[-1:-nrow(dat_predict), -1:-2] <- tmp_yy[-1:-nrow(dat_predict), -1:-2] * -1
+#tmp_yy[-1:-nrow(dat_predict), -1:-2] <- tmp_yy[-1:-nrow(dat_predict), -1:-2] * -1
+#avg_diff <- (tmp_yy[1:nrow(dat_predict), -1:-2] + tmp_yy[-1:-nrow(dat_predict), -1:-2]) / 2
+#yy_DF <- tmp_yy[1:nrow(dat_predict),]
+#yy_DF$Team <- 'Pred_Diff'
 
-avg_diff <- (tmp_yy[1:nrow(dat_predict), -1:-2] + tmp_yy[-1:-nrow(dat_predict), -1:-2]) / 2
-
-yy_DF <- tmp_yy[1:nrow(dat_predict),]
-yy_DF$Team <- 'Pred_Diff'
-
+## 
+yy_DF <- tmp_yy
 
 ## Timer
 tt <- stop_timer(tt)
