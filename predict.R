@@ -109,7 +109,7 @@ for (n in 1:nrow(dat_pred)) {
 ## =============================================================================
 
 ## Activate
-activate_core(7)
+activate_core(6)
 
 ## Global variables
 ctrl <- trainControl(method = "repeatedcv",
@@ -150,7 +150,7 @@ train_caret <- function(dat_combine, pred_type, ctrl, lst_model, n_model, p_trai
 #                    "lars", "lars2", "rvmRadial", "foba", "icr", 
 #                    "ridge", "M5", "krlsRadial", "spls", "pcaNNet", "nnet", 
 #                    "avNNet", "glmboost", "kknn", "gaussprRadial", "glmnet",
-#                    "bayesglm", "RRFglobal", "knn"), 1)  
+#                    "bayesglm", "RRFglobal", "knn"), 100)  
 
 lst_model <- rep(c("rf", "earth", "cubist", "penalized", "neuralnet",
                   "lars2", "rvmRadial", "M5", "glmboost", "RRFglobal"), 100)  
