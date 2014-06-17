@@ -7,6 +7,10 @@ rm(list=ls())
 #setwd("D:/Repo/wc2014")
 setwd("/media/SUPPORT/Repo/wc2014")
 
+n_each <- 200
+n_core <- 7
+
+
 suppressMessages(library(bib))
 suppressMessages(library(xlsx))
 suppressMessages(library(caret))
@@ -109,7 +113,7 @@ for (n in 1:nrow(dat_pred)) {
 ## =============================================================================
 
 ## Activate
-activate_core(6)
+activate_core(n_core)
 
 ## Global variables
 ctrl <- trainControl(method = "repeatedcv",
@@ -121,13 +125,13 @@ ctrl <- trainControl(method = "repeatedcv",
 train_caret <- function(dat_combine, pred_type, ctrl, lst_model, n_model, p_train = 0.75) {
   
   ## Extract
-  x_train <- dat_combine[which(dat_combine$Type != 'predict'), 4:15]
+  x_train <- dat_combine[which(dat_combine$Type == 'train'), 4:15]
   x_test <- dat_combine[which(dat_combine$Type == 'predict'), 4:15]
   
   if (pred_type == 'Goal') {
-    y_train <- dat_combine[which(dat_combine$Type != 'predict'), 'RES_H']
+    y_train <- dat_combine[which(dat_combine$Type == 'train'), 'RES_H']
   } else {
-    y_train <- dat_combine[which(dat_combine$Type != 'predict'), 'DIFF']
+    y_train <- dat_combine[which(dat_combine$Type == 'train'), 'DIFF']
   }
     
   ## Sub-sample
@@ -139,8 +143,17 @@ train_caret <- function(dat_combine, pred_type, ctrl, lst_model, n_model, p_trai
                  tuneLength = 3,
                  method = lst_model[n_model])
   
+  ## Eval
+  yy_train <- predict(model, x_train)
+  chk_R2 <- R2(yy_train, y_train)
+    
   ## Return 
-  return(predict(model, x_test))
+  if (pred_type == 'Goal') {
+    if (chk_R2 > 0.6) return(predict(model, x_test))
+  } else {
+    if (chk_R2 > 0.6) return(predict(model, x_test))
+  }
+  
   
 }
 
@@ -150,10 +163,10 @@ train_caret <- function(dat_combine, pred_type, ctrl, lst_model, n_model, p_trai
 #                    "lars", "lars2", "rvmRadial", "foba", "icr", 
 #                    "ridge", "M5", "krlsRadial", "spls", "pcaNNet", "nnet", 
 #                    "avNNet", "glmboost", "kknn", "gaussprRadial", "glmnet",
-#                    "bayesglm", "RRFglobal", "knn"), 100)  
+#                    "bayesglm", "RRFglobal", "knn"), 3)  
 
 lst_model <- rep(c("rf", "earth", "cubist", "penalized", "neuralnet",
-                  "lars2", "rvmRadial", "M5", "glmboost", "RRFglobal"), 100)  
+                  "lars2", "rvmRadial", "M5", "glmboost", "RRFglobal"), n_each)  
 
 # lst_model <- rep(c("rf", "earth", "cubist", "svmRadial", "dnn", "bayesglm", "RRFglobal",
 #                    "foba", "icr", "ridge", "M5", "spls"), 3)
@@ -239,7 +252,8 @@ yy_all <- rbind(melt(yy_HG),
 colnames(yy_all) <- c("Match", "Team", "Variable", "Goals")
 yy_all$Goals <- round(yy_all$Goals, 3)
 
-axis_max <- 3  #ceiling(max(yy_all$Goals))
+axis_max <- 4 #round(max(yy_all$Goals))
+axis_min <- 0 #round(min(yy_all$Goals))
 
 g_density <- ggplot(yy_all, aes(x = Goals, fill = Team)) + 
   geom_density() +
@@ -252,7 +266,7 @@ g_density <- ggplot(yy_all, aes(x = Goals, fill = Team)) +
         axis.title.x = element_text(vjust = -0.5),
         legend.text = element_text(size = 12)) +
   ggtitle("Distribution of Predicted Outcomes (Goals) for Each Team") +
-  xlim(0, axis_max) + 
+  xlim(axis_min, axis_max) + 
   geom_vline(xintercept = 1, linetype = "dotted", size = 0.5) +
   geom_vline(xintercept = 2, linetype = "dotted", size = 0.5)
   
@@ -267,9 +281,14 @@ g_boxplot <- ggplot(yy_all, aes(x = Team, y = Goals, fill = Team)) +
         axis.title.x = element_text(vjust = -0.5),
         legend.text = element_text(size = 12)) +
   ggtitle("Boxplots of Predicted Outcomes (Goals) for Each Team") +
-  ylim(0, axis_max) +
+  ylim(axis_min, axis_max) +
   geom_hline(yintercept = 1, linetype = "dotted", size = 0.5) +
   geom_hline(yintercept = 2, linetype = "dotted", size = 0.5)
+
+if (axis_max == 4) {
+  g_density <- g_density + geom_vline(xintercept = 3, linetype = "dotted", size = 0.5)
+  g_boxplot <- g_boxplot + geom_hline(yintercept = 3, linetype = "dotted", size = 0.5)
+}
 
 
 ## =============================================================================
@@ -295,8 +314,8 @@ output[row_predict, 10] <- round(apply(yy_DF[,-1:-2], 1, median), 2)
 
 ## Rename columns
 colnames(output) <- c("Data", "Date", "Home", "Away", 
-                      "Real_Home", "Real_Away", "Real_Diff",
-                      "Pred_Home", "Pred_Away", "Pred_Diff")
+                      "Real_H", "Real_A", "Real_Df",
+                      "Pred_H", "Pred_A", "Pred_Df")
 
 
 ## =============================================================================
@@ -317,8 +336,8 @@ suppressMessages(loadfonts())
 
 ## Define output size
 row_max <- max(which(output$Data == "Predictions"))
-pdf_w <- 14
-pdf_h <- 10
+pdf_w <- 10
+pdf_h <- pdf_w * 16 / 9
 
 ## Print PDF
 pdf(file = name_pdf, height = pdf_h, width = pdf_w, 
