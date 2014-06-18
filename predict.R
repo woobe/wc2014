@@ -7,8 +7,8 @@ rm(list=ls())
 #setwd("D:/Repo/wc2014")
 setwd("/media/SUPPORT/Repo/wc2014")
 
-n_each <- 200
-n_core <- 7
+n_each <- 500
+n_core <- 5
 
 
 suppressMessages(library(bib))
@@ -34,7 +34,7 @@ library(extrafont) ## Note: Run font_import() if it has not been done yet
 
 ## Set seed
 set.seed(1234)
-
+#new_colours <- extract_colours("http://filmhash.files.wordpress.com/2011/06/reservoir-dogs-051.jpg", 9)
 
 ## =============================================================================
 ## Load Data
@@ -246,8 +246,8 @@ cat(" Done! ... Duration:", round(tt), "seconds.\n")
 ## =============================================================================
 
 yy_all <- rbind(melt(yy_HG),
-                melt(yy_AG),
-                melt(yy_DF))
+                melt(yy_AG))
+                #melt(yy_DF))
 
 colnames(yy_all) <- c("Match", "Team", "Variable", "Goals")
 yy_all$Goals <- round(yy_all$Goals, 3)
@@ -258,7 +258,7 @@ axis_min <- 0 #round(min(yy_all$Goals))
 g_density <- ggplot(yy_all, aes(x = Goals, fill = Team)) + 
   geom_density() +
   facet_grid(Team ~ Match) +
-  scale_fill_manual(name = "Team", values = c("#34B2CF", "#FCCB05", "#FB0101")) +
+  scale_fill_manual(name = "Team", values = c("#88AFFC", "#FFCC58", "#FB0101")) +
   theme(title = element_text(size = 18, vjust = 2),
         strip.text = element_text(size = 16),
         axis.text = element_text(size = 12),
@@ -272,7 +272,7 @@ g_density <- ggplot(yy_all, aes(x = Goals, fill = Team)) +
   
 g_boxplot <- ggplot(yy_all, aes(x = Team, y = Goals, fill = Team)) + 
   geom_boxplot() +
-  scale_fill_manual(name = "Team", values = c("#34B2CF", "#FCCB05", "#FB0101")) +
+  scale_fill_manual(name = "Team", values = c("#88AFFC", "#FFCC58", "#FB0101")) +
   facet_grid(~ Match)  +
   theme(title = element_text(size = 18, vjust = 2),
         strip.text = element_text(size = 16),
@@ -337,7 +337,7 @@ suppressMessages(loadfonts())
 ## Define output size
 row_max <- max(which(output$Data == "Predictions"))
 pdf_w <- 10
-pdf_h <- pdf_w * 16 / 9
+pdf_h <- 14
 
 ## Print PDF
 pdf(file = name_pdf, height = pdf_h, width = pdf_w, 
