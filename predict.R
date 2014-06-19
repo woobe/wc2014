@@ -7,34 +7,28 @@ rm(list=ls())
 #setwd("D:/Repo/wc2014")
 setwd("/media/SUPPORT/Repo/wc2014")
 
-n_each <- 500
-n_core <- 5
+## Core Paramemters
+n_each <- 200
+n_core <- 7
+threshold_R2 <- 0.4
 
+## Set seed
+set.seed(1234)
+
+
+## =============================================================================
+## Load Packages
+## =============================================================================
 
 suppressMessages(library(bib))
 suppressMessages(library(xlsx))
 suppressMessages(library(caret))
-suppressMessages(library(e1071))
-suppressMessages(library(randomForest))
-suppressMessages(library(Cubist))
-suppressMessages(library(earth))
-suppressMessages(library(kknn))
 suppressMessages(library(reshape2))
 suppressMessages(library(ggplot2))
+suppressMessages(library(grid))
 suppressMessages(library(gridExtra))
 suppressMessages(library(extrafont))
 
-library(grid)
-library(gridExtra)
-library(EBImage)
-library(ggplot2)
-library(rPlotter)
-library(extrafont) ## Note: Run font_import() if it has not been done yet
-
-
-## Set seed
-set.seed(1234)
-#new_colours <- extract_colours("http://filmhash.files.wordpress.com/2011/06/reservoir-dogs-051.jpg", 9)
 
 ## =============================================================================
 ## Load Data
@@ -92,6 +86,7 @@ dat_combine <- rbind(dat_train,
 pp <- preProcess(dat_combine[,4:15], method = c("center", "scale", "BoxCox"))
 dat_combine[, 4:15] <- predict(pp, dat_combine[, 4:15])
 
+
 ## =============================================================================
 ## Split Train/Test
 ## =============================================================================
@@ -108,6 +103,25 @@ for (n in 1:nrow(dat_pred)) {
 }
 
 
+
+## =============================================================================
+## Testing ....
+## =============================================================================
+
+# 
+# x_train <- dat_combine[which(dat_combine$Type == 'train'), 4:15]
+# y_train <- dat_combine[which(dat_combine$Type == 'train'), 16]
+# y_max <- max(y_train)
+# y_train <- y_train / y_max
+# activate_core(7)
+# model <- train(x_train, y_train, method = "RRFglobal",
+#                trControl = ctrl,
+#                tuneLength = 5)
+# yy_train <- predict(model, x_train)
+# print(nse(yy_train, y_train))
+
+
+
 ## =============================================================================
 ## Prepare for training
 ## =============================================================================
@@ -116,9 +130,9 @@ for (n in 1:nrow(dat_pred)) {
 activate_core(n_core)
 
 ## Global variables
-ctrl <- trainControl(method = "repeatedcv",
+ctrl <- trainControl(method = "adaptive_cv",
                      repeats = 1,
-                     number = 5,
+                     number = 10,
                      allowParallel = FALSE)
 
 ## Train Function
@@ -140,7 +154,7 @@ train_caret <- function(dat_combine, pred_type, ctrl, lst_model, n_model, p_trai
   ## Train caret model
   model <- train(x_train[row_use, ], y_train[row_use], 
                  trControl = ctrl, 
-                 tuneLength = 3,
+                 tuneLength = 5,
                  method = lst_model[n_model])
   
   ## Eval
@@ -149,9 +163,9 @@ train_caret <- function(dat_combine, pred_type, ctrl, lst_model, n_model, p_trai
     
   ## Return 
   if (pred_type == 'Goal') {
-    if (chk_R2 > 0.6) return(predict(model, x_test))
+    if (chk_R2 > threshold_R2) return(predict(model, x_test))
   } else {
-    if (chk_R2 > 0.6) return(predict(model, x_test))
+    if (chk_R2 > threshold_R2) return(predict(model, x_test))
   }
   
   
@@ -163,13 +177,14 @@ train_caret <- function(dat_combine, pred_type, ctrl, lst_model, n_model, p_trai
 #                    "lars", "lars2", "rvmRadial", "foba", "icr", 
 #                    "ridge", "M5", "krlsRadial", "spls", "pcaNNet", "nnet", 
 #                    "avNNet", "glmboost", "kknn", "gaussprRadial", "glmnet",
-#                    "bayesglm", "RRFglobal", "knn"), 3)  
+#                    "bayesglm", "RRFglobal", "knn"), n_each)  
 
-lst_model <- rep(c("rf", "earth", "cubist", "penalized", "neuralnet",
-                  "lars2", "rvmRadial", "M5", "glmboost", "RRFglobal"), n_each)  
+#lst_model <- rep(c("rf", "earth", "neuralnet"), n_each)
+
+lst_model <- rep(c("rf", "earth", "cubist", "neuralnet", "svmRadial"), n_each)
 
 # lst_model <- rep(c("rf", "earth", "cubist", "svmRadial", "dnn", "bayesglm", "RRFglobal",
-#                    "foba", "icr", "ridge", "M5", "spls"), 3)
+#                    "foba", "icr", "ridge", "M5", "spls"), n_each)
 
 
 ## =============================================================================
@@ -252,13 +267,14 @@ yy_all <- rbind(melt(yy_HG),
 colnames(yy_all) <- c("Match", "Team", "Variable", "Goals")
 yy_all$Goals <- round(yy_all$Goals, 3)
 
-axis_max <- 4 #round(max(yy_all$Goals))
+axis_max <- 3 #round(max(yy_all$Goals))
 axis_min <- 0 #round(min(yy_all$Goals))
 
-g_density <- ggplot(yy_all, aes(x = Goals, fill = Team)) + 
+g_density <- ggplot(yy_all, aes(x = Goals, colour = Team, fill = Team)) + 
   geom_density() +
   facet_grid(Team ~ Match) +
-  scale_fill_manual(name = "Team", values = c("#88AFFC", "#FFCC58", "#FB0101")) +
+  scale_colour_manual(name = "Team", values = c("dodgerblue4", "darkorange4")) +
+  scale_fill_manual(name = "Team", values = c("dodgerblue", "darkorange")) +
   theme(title = element_text(size = 18, vjust = 2),
         strip.text = element_text(size = 16),
         axis.text = element_text(size = 12),
@@ -268,11 +284,14 @@ g_density <- ggplot(yy_all, aes(x = Goals, fill = Team)) +
   ggtitle("Distribution of Predicted Outcomes (Goals) for Each Team") +
   xlim(axis_min, axis_max) + 
   geom_vline(xintercept = 1, linetype = "dotted", size = 0.5) +
-  geom_vline(xintercept = 2, linetype = "dotted", size = 0.5)
-  
-g_boxplot <- ggplot(yy_all, aes(x = Team, y = Goals, fill = Team)) + 
+  geom_vline(xintercept = 2, linetype = "dotted", size = 0.5) 
+  #geom_vline(xintercept = 3, linetype = "dotted", size = 0.5)
+
+
+g_boxplot <- ggplot(yy_all, aes(x = Team, y = Goals, colour = Team, fill = Team)) + 
   geom_boxplot() +
-  scale_fill_manual(name = "Team", values = c("#88AFFC", "#FFCC58", "#FB0101")) +
+  scale_colour_manual(name = "Team", values = c("dodgerblue4", "darkorange4")) +
+  scale_fill_manual(name = "Team", values = c("dodgerblue", "darkorange")) +
   facet_grid(~ Match)  +
   theme(title = element_text(size = 18, vjust = 2),
         strip.text = element_text(size = 16),
@@ -283,12 +302,9 @@ g_boxplot <- ggplot(yy_all, aes(x = Team, y = Goals, fill = Team)) +
   ggtitle("Boxplots of Predicted Outcomes (Goals) for Each Team") +
   ylim(axis_min, axis_max) +
   geom_hline(yintercept = 1, linetype = "dotted", size = 0.5) +
-  geom_hline(yintercept = 2, linetype = "dotted", size = 0.5)
+  geom_hline(yintercept = 2, linetype = "dotted", size = 0.5) 
+  #geom_hline(yintercept = 3, linetype = "dotted", size = 0.5)
 
-if (axis_max == 4) {
-  g_density <- g_density + geom_vline(xintercept = 3, linetype = "dotted", size = 0.5)
-  g_boxplot <- g_boxplot + geom_hline(yintercept = 3, linetype = "dotted", size = 0.5)
-}
 
 
 ## =============================================================================
@@ -340,7 +356,7 @@ pdf_w <- 10
 pdf_h <- 14
 
 ## Print PDF
-pdf(file = name_pdf, height = pdf_h, width = pdf_w, 
+pdf(file = name_pdf, height = pdf_h, width = pdf_w,
     family = "Ubuntu", title = "WC2014 Predictions by Jo-fai Chow")
 
 ## Print Summary Table
