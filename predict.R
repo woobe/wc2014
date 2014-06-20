@@ -108,17 +108,20 @@ for (n in 1:nrow(dat_pred)) {
 ## Testing ....
 ## =============================================================================
 
-# 
-# x_train <- dat_combine[which(dat_combine$Type == 'train'), 4:15]
-# y_train <- dat_combine[which(dat_combine$Type == 'train'), 16]
-# y_max <- max(y_train)
-# y_train <- y_train / y_max
-# activate_core(7)
-# model <- train(x_train, y_train, method = "RRFglobal",
-#                trControl = ctrl,
-#                tuneLength = 5)
-# yy_train <- predict(model, x_train)
-# print(nse(yy_train, y_train))
+##
+
+if (FALSE) {
+  x_train <- dat_combine[which(dat_combine$Type == 'train'), 4:15]
+  y_train <- dat_combine[which(dat_combine$Type == 'train'), 16]
+  y_max <- max(y_train)
+  y_train <- y_train / y_max
+  activate_core(7)
+  model <- train(x_train, y_train, method = "RRFglobal",
+                 trControl = ctrl,
+                 tuneLength = 5)
+  yy_train <- predict(model, x_train)
+  print(nse(yy_train, y_train))
+}
 
 
 
