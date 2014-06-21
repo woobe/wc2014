@@ -4,13 +4,12 @@
 
 ## Initiate
 rm(list=ls())
-#setwd("D:/Repo/wc2014")
-setwd("/media/SUPPORT/Repo/wc2014")
+
 
 ## Core Paramemters
-n_each <- 200
-n_core <- 7
-threshold_R2 <- 0.4
+n_core <- 5
+n_total <- 500
+p_train <- 0.75
 
 ## Set seed
 set.seed(1234)
@@ -132,14 +131,8 @@ if (FALSE) {
 ## Activate
 activate_core(n_core)
 
-## Global variables
-ctrl <- trainControl(method = "adaptive_cv",
-                     repeats = 1,
-                     number = 10,
-                     allowParallel = FALSE)
-
-## Train Function
-train_caret <- function(dat_combine, pred_type, ctrl, lst_model, n_model, p_train = 0.75) {
+## Train four models for each random split
+train_four <- function(dat_combine, pred_type, p_train) {
   
   ## Extract
   x_train <- dat_combine[which(dat_combine$Type == 'train'), 4:15]
@@ -150,44 +143,68 @@ train_caret <- function(dat_combine, pred_type, ctrl, lst_model, n_model, p_trai
   } else {
     y_train <- dat_combine[which(dat_combine$Type == 'train'), 'DIFF']
   }
-    
+  
   ## Sub-sample
   row_use <- createDataPartition(y_train, p = p_train, list = FALSE)
   
-  ## Train caret model
-  model <- train(x_train[row_use, ], y_train[row_use], 
-                 trControl = ctrl, 
-                 tuneLength = 5,
-                 method = lst_model[n_model])
+  ## Global variables
+  ctrl <- trainControl(method = "adaptive_cv",
+                       repeats = 1,
+                       number = 10,
+                       allowParallel = FALSE)
   
-  ## Eval
-  yy_train <- predict(model, x_train)
-  chk_R2 <- R2(yy_train, y_train)
+  ## Empty Shell
+  yy_train <- matrix(NA, ncol = 4, nrow = nrow(x_train))
+  yy_test <- matrix(NA, ncol = 4, nrow = nrow(x_test))
+  
+  ## New Stuff Here
+  model_svm <- svm(x_train[row_use,], y_train[row_use], cost = 10)
+  yy_train[, 1] <- predict(model_svm, x_train)
+  yy_test[, 1] <- predict(model_svm, x_test)
+  
+  model_rf <- randomForest(x_train[row_use,], y_train[row_use])
+  yy_train[, 2] <- predict(model_rf, x_train)
+  yy_test[, 2] <- predict(model_rf, x_test)
+  
+  model_cb <- train(x_train[row_use,], y_train[row_use], method = 'cubist', trControl = ctrl)
+  yy_train[, 3] <- predict(model_cb, x_train)
+  yy_test[, 3] <- predict(model_cb, x_test)
+  
+  model_knn <- train(x_train[row_use,], y_train[row_use], method = 'kknn', trControl = ctrl)
+  yy_train[, 4] <- predict(model_knn, x_train)
+  yy_test[, 4] <- predict(model_knn, x_test)
+  
+  ## Evaluate function
+  eval_yy <- function(wgts) {
     
-  ## Return 
-  if (pred_type == 'Goal') {
-    if (chk_R2 > threshold_R2) return(predict(model, x_test))
-  } else {
-    if (chk_R2 > threshold_R2) return(predict(model, x_test))
+    ## Normalise weights
+    wgts <- wgts / sum(wgts)
+    
+    ## Apply weights
+    yy_wgts <- rowSums(yy_train * wgts)
+    
+    ## Return evaluation
+    return(nse(yy_wgts, y_train))
+    
   }
   
+  ## Optimise
+  model_ga <- ga(type = 'real-valued',
+                 fitness = eval_yy,
+                 min = c(0,0,0,0),
+                 max = c(1,1,1,1))  
+  
+  ## Get best weights
+  wgts <- summary(model_ga)$solution / sum(summary(model_ga)$solution)
+  
+  ## Apply weights to yy_test
+  yy_test_final <- as.matrix(rowSums(yy_test * as.numeric(wgts)))
+  
+  ## Return
+  return(yy_test_final)
   
 }
 
-## List of Models
-# lst_model <- rep(c("svmRadial", "rf", "earth", "dnn", "cubist",
-#                    "superpc", "relaxo", "pcr", "penalized", "neuralnet", 
-#                    "lars", "lars2", "rvmRadial", "foba", "icr", 
-#                    "ridge", "M5", "krlsRadial", "spls", "pcaNNet", "nnet", 
-#                    "avNNet", "glmboost", "kknn", "gaussprRadial", "glmnet",
-#                    "bayesglm", "RRFglobal", "knn"), n_each)  
-
-#lst_model <- rep(c("rf", "earth", "neuralnet"), n_each)
-
-lst_model <- rep(c("rf", "earth", "cubist", "neuralnet", "svmRadial"), n_each)
-
-# lst_model <- rep(c("rf", "earth", "cubist", "svmRadial", "dnn", "bayesglm", "RRFglobal",
-#                    "foba", "icr", "ridge", "M5", "spls"), n_each)
 
 
 ## =============================================================================
@@ -201,16 +218,15 @@ tt <- start_timer()
 cat("Now training models for Goals prediction ...")
 
 ## Parallelised Train
-tmp_yy <- foreach(n_model = 1:length(lst_model),
+tmp_yy <- foreach(n_model = 1:n_total,
                   .combine = cbind,
                   .multicombine = TRUE,
                   .errorhandling = 'remove',
-                  .packages = 'caret') %dopar%
-  train_caret(dat_combine, pred_type = 'Goal', ctrl, lst_model, n_model)
+                  .packages = c('caret', 'e1071', 'randomForest','bib','GA')) %dopar%
+  train_four(dat_combine, pred_type = 'Goal', p_train)
 
 ## Split into Home/Away
 tmp_yy <- data.frame(Match = dat_pred$Match, Team = rep(c('Team1','Team2'), each = nrow(dat_predict)), tmp_yy)
-#colnames(tmp_yy) <- c("Match", "Team", lst_model[1:dim(tmp_yy)[2]])
 yy_HG <- tmp_yy[1:nrow(dat_predict), ]
 yy_AG <- tmp_yy[-1:-nrow(dat_predict), ]
 
@@ -232,25 +248,19 @@ tt <- start_timer()
 cat("Now training models for Goals Difference Prediction ...")
 
 ## Parallelised Train
-tmp_yy <- foreach(n_model = 1:length(lst_model),
+tmp_yy <- foreach(n_model = 1:n_total,
                   .combine = cbind,
                   .multicombine = TRUE,
                   .errorhandling = 'remove',
-                  .packages = 'caret') %dopar%
-  train_caret(dat_combine[1:48,], pred_type = 'Diff', ctrl, lst_model, n_model)
+                  .packages = c('caret', 'e1071', 'randomForest','bib','GA')) %dopar%
+  train_four(dat_combine, pred_type = 'Diff', p_train)
 
-## Split into Home/Away
-tmp_yy <- data.frame(Match = dat_pred$Match, Team = 'Pred_Diff', tmp_yy)
-#colnames(tmp_yy) <- c("Match", "Team", lst_model[1:dim(tmp_yy)[2]])
+## Reverse Away Prediction
+yy_DF <- data.frame(Match = dat_pred$Match, Team = 'Pred_Diff', tmp_yy)
+n_start <- nrow(yy_DF)/2 + 1
+n_end <- nrow(yy_DF)
+yy_DF[n_start:n_end, -1:-2] <- yy_DF[n_start:n_end, -1:-2] * -1
 
-## Convert Away Goal Diff to Home Goal Diff
-#tmp_yy[-1:-nrow(dat_predict), -1:-2] <- tmp_yy[-1:-nrow(dat_predict), -1:-2] * -1
-#avg_diff <- (tmp_yy[1:nrow(dat_predict), -1:-2] + tmp_yy[-1:-nrow(dat_predict), -1:-2]) / 2
-#yy_DF <- tmp_yy[1:nrow(dat_predict),]
-#yy_DF$Team <- 'Pred_Diff'
-
-## 
-yy_DF <- tmp_yy
 
 ## Timer
 tt <- stop_timer(tt)
@@ -265,7 +275,7 @@ cat(" Done! ... Duration:", round(tt), "seconds.\n")
 
 yy_all <- rbind(melt(yy_HG),
                 melt(yy_AG))
-                #melt(yy_DF))
+#melt(yy_DF))
 
 colnames(yy_all) <- c("Match", "Team", "Variable", "Goals")
 yy_all$Goals <- round(yy_all$Goals, 3)
@@ -288,7 +298,7 @@ g_density <- ggplot(yy_all, aes(x = Goals, colour = Team, fill = Team)) +
   xlim(axis_min, axis_max) + 
   geom_vline(xintercept = 1, linetype = "dotted", size = 0.5) +
   geom_vline(xintercept = 2, linetype = "dotted", size = 0.5) 
-  #geom_vline(xintercept = 3, linetype = "dotted", size = 0.5)
+#geom_vline(xintercept = 3, linetype = "dotted", size = 0.5)
 
 
 g_boxplot <- ggplot(yy_all, aes(x = Team, y = Goals, colour = Team, fill = Team)) + 
@@ -306,7 +316,7 @@ g_boxplot <- ggplot(yy_all, aes(x = Team, y = Goals, colour = Team, fill = Team)
   ylim(axis_min, axis_max) +
   geom_hline(yintercept = 1, linetype = "dotted", size = 0.5) +
   geom_hline(yintercept = 2, linetype = "dotted", size = 0.5) 
-  #geom_hline(yintercept = 3, linetype = "dotted", size = 0.5)
+#geom_hline(yintercept = 3, linetype = "dotted", size = 0.5)
 
 
 
@@ -329,7 +339,10 @@ output[row_train, 8:10] <- dat_raw[row_train, c("PRED_H", "PRED_A", "PRED_DIFF")
 ## Predictions (Current)
 output[row_predict, 8] <- round(apply(yy_HG[,-1:-2], 1, median), 2)
 output[row_predict, 9] <- round(apply(yy_AG[,-1:-2], 1, median), 2)
-output[row_predict, 10] <- round(apply(yy_DF[,-1:-2], 1, median), 2)
+
+tmp_DF <- matrix(round(apply(yy_DF[,-1:-2], 1, median), 2), nrow = 2, byrow = T)
+tmp_DF <- round((tmp_DF[1, ] + tmp_DF[2, ]) / 2, 2)
+output[row_predict, 10] <- tmp_DF
 
 ## Rename columns
 colnames(output) <- c("Data", "Date", "Home", "Away", 
