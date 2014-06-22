@@ -8,7 +8,7 @@ rm(list=ls())
 
 ## Core Paramemters
 n_core <- 5
-n_total <- 500
+n_total <- 1000
 p_train <- 0.75
 
 ## Set seed
@@ -19,7 +19,6 @@ set.seed(1234)
 ## Load Packages
 ## =============================================================================
 
-suppressMessages(library(bib))
 suppressMessages(library(xlsx))
 suppressMessages(library(caret))
 suppressMessages(library(reshape2))
@@ -27,7 +26,13 @@ suppressMessages(library(ggplot2))
 suppressMessages(library(grid))
 suppressMessages(library(gridExtra))
 suppressMessages(library(extrafont))
-
+suppressMessages(library(e1071))
+suppressMessages(library(randomForest))
+suppressMessages(library(MASS))
+suppressMessages(library(Cubist))
+suppressMessages(library(kknn))
+suppressMessages(library(GA))
+suppressMessages(library(bib))
 
 ## =============================================================================
 ## Load Data
@@ -49,23 +54,42 @@ dat_predict <- dat[which(dat$Type == 'predict'),]
 dat_future <- dat[which(dat$Type == 'future'),]
 
 ## Swap Home and Away position
-col_swap <- c('Date', 'TEAM_A', 'TEAM_H', 'FTE_L', 'FTE_W', 'FTE_D',
-              'BF_2', 'BF_X', 'BF_1', 'SPI_A', 'OFF_A', 'DEF_A',
-              'SPI_H', 'OFF_H', 'DEF_H', 'RES_A', 'RES_H', 'DIFF',
-              'PRED_A', 'PRED_H', 'PRED_DIFF', 'Type')
+# col_swap <- c('Date', 'TEAM_A', 'TEAM_H', 
+#               'FTE_L', 'FTE_W', 'FTE_D',
+#               "BLM_W", "BLM_T",  "BLM_A"
+#               'BF_2', 'BF_X', 'BF_1', 
+#               'SPI_A', 'OFF_A', 'DEF_A',
+#               'SPI_H', 'OFF_H', 'DEF_H', 
+#               'RES_A', 'RES_H', 'DIFF',
+#               'PRED_A', 'PRED_H', 'PRED_DIFF', 
+#               'Type')
+
+col_swap <- c("Date", "TEAM_A", "TEAM_H",
+              "FTE_A", "FTE_H", "FTE_D",
+              "BLM_A", "BLM_D", "BLM_H",
+              "SPI_A", "OFF_A", "DEF_A",
+              "SPI_H", "OFF_H", "DEF_H",
+              "BLM_OFF_A", "BLM_DEF_A", "BLM_OVR_A",
+              "BLM_OFF_H", "BLM_DEF_H", "BLM_OVR_H",
+              "RNK_A", "APP_A", "BEST_A",
+              "RNK_H", "APP_H", "BEST_H",
+              "BF_A", "BF_D", "BF_H",
+              "RES_A", "RES_H", "RES_DIFF",
+              "PRED_A", "PRED_H", "PRED_DIFF",
+              "Type")
 
 dat_train_swap <- dat_train[, col_swap]
-dat_train_swap$DIFF <- dat_train_swap$DIFF * -1
+dat_train_swap$RES_DIFF <- dat_train_swap$RES_DIFF * -1
 dat_train_swap$PRED_DIFF <- dat_train_swap$PRED_DIFF * -1
 colnames(dat_train_swap) <- colnames(dat)
 
 dat_predict_swap <- dat_predict[, col_swap]
-dat_predict_swap$DIFF <- dat_predict_swap$DIFF * -1
+dat_predict_swap$RES_DIFF <- dat_predict_swap$RES_DIFF * -1
 dat_predict_swap$PRED_DIFF <- dat_predict_swap$PRED_DIFF * -1
 colnames(dat_predict_swap) <- colnames(dat)
 
 dat_future_swap <- dat_future[, col_swap]
-dat_future_swap$DIFF <- dat_future_swap$DIFF * -1
+dat_future_swap$RES_DIFF <- dat_future_swap$RES_DIFF * -1
 dat_future_swap$PRED_DIFF <- dat_future_swap$PRED_DIFF * -1
 colnames(dat_future_swap) <- colnames(dat)
 
@@ -82,8 +106,8 @@ dat_combine <- rbind(dat_train,
 ## =============================================================================
 
 ## Pre-process predictors
-pp <- preProcess(dat_combine[,4:15], method = c("center", "scale", "BoxCox"))
-dat_combine[, 4:15] <- predict(pp, dat_combine[, 4:15])
+pp <- preProcess(dat_combine[,4:30], method = c("center", "scale", "BoxCox"))
+dat_combine[, 4:30] <- predict(pp, dat_combine[, 4:30])
 
 
 ## =============================================================================
@@ -135,13 +159,13 @@ activate_core(n_core)
 train_four <- function(dat_combine, pred_type, p_train) {
   
   ## Extract
-  x_train <- dat_combine[which(dat_combine$Type == 'train'), 4:15]
-  x_test <- dat_combine[which(dat_combine$Type == 'predict'), 4:15]
+  x_train <- dat_combine[which(dat_combine$Type == 'train'), 4:30]
+  x_test <- dat_combine[which(dat_combine$Type == 'predict'), 4:30]
   
   if (pred_type == 'Goal') {
     y_train <- dat_combine[which(dat_combine$Type == 'train'), 'RES_H']
   } else {
-    y_train <- dat_combine[which(dat_combine$Type == 'train'), 'DIFF']
+    y_train <- dat_combine[which(dat_combine$Type == 'train'), 'RES_DIFF']
   }
   
   ## Sub-sample
@@ -262,6 +286,7 @@ n_end <- nrow(yy_DF)
 yy_DF[n_start:n_end, -1:-2] <- yy_DF[n_start:n_end, -1:-2] * -1
 
 
+
 ## Timer
 tt <- stop_timer(tt)
 
@@ -326,12 +351,13 @@ g_boxplot <- ggplot(yy_all, aes(x = Team, y = Goals, colour = Team, fill = Team)
 
 ## Train/Test, Date and Teams
 output <- data.frame(matrix(NA, nrow = nrow(dat_raw), ncol = 10))
-output[-row_predict, 1] <- "Training Set"
+output[row_train, 1] <- "Training Set"
 output[row_predict, 1] <- "Predictions"
+output[row_future, 1] <- "Future"
 output[, 2:4] <- dat_raw[, 1:3]
 
 ## Real Data
-output[row_train, 5:7] <- dat_raw[row_train, c("RES_H", "RES_A", "DIFF")]
+output[row_train, 5:7] <- dat_raw[row_train, c("RES_H", "RES_A", "RES_DIFF")]
 
 ## Predictions (Previous)
 output[row_train, 8:10] <- dat_raw[row_train, c("PRED_H", "PRED_A", "PRED_DIFF")]
@@ -377,7 +403,7 @@ pdf(file = name_pdf, height = pdf_h, width = pdf_w,
 
 ## Print Summary Table
 grid.newpage()
-g_table <- grid.table(output[1:row_max,], show.rownames = F)
+grid.table(output[1:row_max,], show.rownames = F)
 
 ## Print boxplot and density
 grid.newpage()
