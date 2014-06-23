@@ -7,7 +7,7 @@ rm(list=ls())
 
 
 ## Core Paramemters
-n_core <- 5
+n_core <- 4
 n_total <- 1000
 p_train <- 0.75
 
@@ -406,11 +406,11 @@ grid.newpage()
 grid.table(output[1:row_max,], show.rownames = F)
 
 ## Print boxplot and density
-grid.newpage()
-pushViewport(viewport(layout = grid.layout(1000, 1000)))
-vplayout <- function(x, y) viewport(layout.pos.row = x, layout.pos.col = y)
-print(g_boxplot, vp = vplayout(1:500, 1:1000))
-print(g_density, vp = vplayout(501:1000, 1:1000))
+# grid.newpage()
+# pushViewport(viewport(layout = grid.layout(1000, 1000)))
+# vplayout <- function(x, y) viewport(layout.pos.row = x, layout.pos.col = y)
+# print(g_boxplot, vp = vplayout(1:500, 1:1000))
+# print(g_density, vp = vplayout(501:1000, 1:1000))
 
 
 ## Close and save
