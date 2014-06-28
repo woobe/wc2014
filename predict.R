@@ -7,9 +7,9 @@ rm(list=ls())
 
 
 ## Core Paramemters
-n_core <- 4
-n_total <- 1000
-p_train <- 0.75
+n_core <- 7
+n_total <- 500
+p_train <- 0.667
 
 ## Set seed
 set.seed(1234)
@@ -65,8 +65,8 @@ dat_future <- dat[which(dat$Type == 'future'),]
 #               'Type')
 
 col_swap <- c("Date", "TEAM_A", "TEAM_H",
-              "FTE_A", "FTE_H", "FTE_D",
-              "BLM_A", "BLM_D", "BLM_H",
+              "FTE_A", "FTE_H", 
+              "BLM_A", "BLM_H",
               "SPI_A", "OFF_A", "DEF_A",
               "SPI_H", "OFF_H", "DEF_H",
               "BLM_OFF_A", "BLM_DEF_A", "BLM_OVR_A",
@@ -106,8 +106,8 @@ dat_combine <- rbind(dat_train,
 ## =============================================================================
 
 ## Pre-process predictors
-pp <- preProcess(dat_combine[,4:30], method = c("center", "scale", "BoxCox"))
-dat_combine[, 4:30] <- predict(pp, dat_combine[, 4:30])
+pp <- preProcess(dat_combine[,4:28], method = c("center", "scale", "BoxCox"))
+dat_combine[, 4:28] <- predict(pp, dat_combine[, 4:28])
 
 
 ## =============================================================================
@@ -128,27 +128,6 @@ for (n in 1:nrow(dat_pred)) {
 
 
 ## =============================================================================
-## Testing ....
-## =============================================================================
-
-##
-
-if (FALSE) {
-  x_train <- dat_combine[which(dat_combine$Type == 'train'), 4:15]
-  y_train <- dat_combine[which(dat_combine$Type == 'train'), 16]
-  y_max <- max(y_train)
-  y_train <- y_train / y_max
-  activate_core(7)
-  model <- train(x_train, y_train, method = "RRFglobal",
-                 trControl = ctrl,
-                 tuneLength = 5)
-  yy_train <- predict(model, x_train)
-  print(nse(yy_train, y_train))
-}
-
-
-
-## =============================================================================
 ## Prepare for training
 ## =============================================================================
 
@@ -159,8 +138,8 @@ activate_core(n_core)
 train_four <- function(dat_combine, pred_type, p_train) {
   
   ## Extract
-  x_train <- dat_combine[which(dat_combine$Type == 'train'), 4:30]
-  x_test <- dat_combine[which(dat_combine$Type == 'predict'), 4:30]
+  x_train <- dat_combine[which(dat_combine$Type == 'train'), 4:28]
+  x_test <- dat_combine[which(dat_combine$Type == 'predict'), 4:28]
   
   if (pred_type == 'Goal') {
     y_train <- dat_combine[which(dat_combine$Type == 'train'), 'RES_H']
@@ -403,7 +382,7 @@ pdf(file = name_pdf, height = pdf_h, width = pdf_w,
 
 ## Print Summary Table
 grid.newpage()
-grid.table(output[1:row_max,], show.rownames = F)
+grid.table(output[-1:-32,], show.rownames = F)
 
 ## Print boxplot and density
 # grid.newpage()
