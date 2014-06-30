@@ -1,7 +1,6 @@
-World Cup 2014 Data Analysis and Predictions
-======
+### Introduction
 
-This is an experiment to see whether data mining can outperform my friends. So far data mining has the upper hand :)
+This repository contains all the data, code and outputs for my World Cup 2014 analysis. It is an experiment to see whether data mining can outperform my friends. So far the data mining approach has the upper hand. It predicted 30/52 (or 57.7%) correct match results (Win/Draw/Lose) and 10/52 (or 19.2%) correct scores.
 
 ### Data Source
 
@@ -9,7 +8,17 @@ This is an experiment to see whether data mining can outperform my friends. So f
 2. http://www.bloomberg.com/visual-data/world-cup/
 3. https://www.betfair.com/sport
 
+### Methods
+
+- The predictors include various information from Bloomberg and FiveThirtyEight such as team performance indicators, probability of Win/Draw/Lose, world ranking as well as latest odds from betfair.com. An Excel spreadsheet in the **data** folder is used for storing the data.
+- The predicted results are median values from multiple model predictions. Each model consists of four common regression mini models (Random Forest, SVMs, Cubist and KNN) which are trained with boostrapped data and blended for better genearlisation.
+- Early on in the tourament, the future match results predicted by Bloomberg had been used as training data as there were not enough actual results.
+
+
 ### Results
+
+**Notes**: more detailed results including the distribution of predictions results can be found in the **output** folder.
+
 
 Match | Date | Team 1 | Team 2 | Predictions | Results | Correct WDL | Correct Score 
 ------|------|--------|--------|-------------|---------|--------------|---------------
@@ -69,10 +78,10 @@ Match | Date | Team 1 | Team 2 | Predictions | Results | Correct WDL | Correct S
 54 | 30/06 | Germany | Algeria | 2:1 | ?:? | ? | ? 
 55 | 01/07 | Argentina | Switzerland | 3:1 | ?:? | ? | ? 
 56 | 01/07 | Belgium | USA | 2:1 | ?:? | ? | ? 
-Summary | - | - | - | - | - | 30/52 | 10/52 
-Accuracy | - | - | - | - | - | 57.7% | 19.2% 
+**Summary** | - | - | - | - | - | **30/52** | **10/52**
+**Accuracy** | - | - | - | - | - | **57.7%** | **19.2%** 
 
-### Notes
+### Comments
 
 Match(es) | Comments
 ----------|-------------
