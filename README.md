@@ -1,6 +1,6 @@
 ### Introduction
 
-This repository contains all the data, code and outputs for my World Cup 2014 analysis. It is an experiment to see whether data mining can outperform my friends. So far the data mining approach has the upper hand. It predicted 30/52 (or 57.4%) correct match results (Win/Draw/Lose) and 10/52 (or 18.5%) correct scores.
+This repository contains all the data, code and outputs for my World Cup 2014 analysis. It is an experiment to see whether data mining can outperform my friends. So far the data mining approach has the upper hand. It predicted 31/56 (or 55.4%) correct match results (Win/Draw/Lose) and 10/56 (or 17.9%) correct scores.
 
 ### Data Source
 
@@ -11,7 +11,7 @@ This repository contains all the data, code and outputs for my World Cup 2014 an
 ### Methods
 
 - The predictors include various information from Bloomberg and FiveThirtyEight such as team performance indicators, probability of Win/Draw/Lose, world ranking as well as latest odds from betfair.com. An Excel spreadsheet in the **data** folder is used for storing the data.
-- The predicted results are median values from multiple model predictions. Each model consists of four common regression mini models (Random Forest, SVMs, Cubist and KNN) which are trained with boostrapped data and blended for better genearlisation.
+- The predicted results are median values from multiple model predictions. Each model consists of four common regression mini models (Random Forest, SVMs, Cubist and KNN) which are trained with bootstrapped samples and blended for better genearlisation.
 - Early on in the tourament, the future match results predicted by Bloomberg had been used as training data as there were not enough actual results.
 
 
@@ -20,7 +20,7 @@ This repository contains all the data, code and outputs for my World Cup 2014 an
 **Notes**: more detailed results including the distribution of predictions results can be found in the **output** folder.
 
 
-Match | Date | Team 1 | Team 2 | Predictions | Results | Correct WDL | Correct Score 
+Match | Date | Team 1 | Team 2 | Predictions | Results (90 mins) | Correct WDL | Correct Score 
 ------|------|--------|--------|-------------|---------|--------------|---------------
 1 | 12/06 | Brazil | Croatia | 4:0 | 3:1 | **Yes** | No 
 2 | 13/06 | Mexico | Cameroon | 1:0 | 1:0 | **Yes** | **Yes** 
@@ -76,10 +76,15 @@ Match | Date | Team 1 | Team 2 | Predictions | Results | Correct WDL | Correct S
 52 | 29/06 | Costa Rica | Greece | 1:1 | 1:1 | **Yes** | **Yes** 
 53 | 30/06 | France | Nigeria | 2:1 | 2:0 | **Yes** | No 
 54 | 30/06 | Germany | Algeria | 2:1 | 0:0 | No | No 
-55 | 01/07 | Argentina | Switzerland | 3:1 | ?:? | ? | ? 
-56 | 01/07 | Belgium | USA | 2:1 | ?:? | ? | ? 
-**Summary** | - | - | - | - | - | **31/54** | **10/54**
-**Accuracy** | - | - | - | - | - | **57.4%** | **18.5%** 
+55 | 01/07 | Argentina | Switzerland | 3:1 | 0:0 | No | No 
+56 | 01/07 | Belgium | USA | 2:1 | 0:0 | No | No 
+57 | 04/07 | France | Germany | 1:2 | ?:? | ? | ?
+58 | 04/07 | Brazil | Colombia | 1:1 | ?:? | ? | ?
+59 | 05/07 | Argentina | Belgium | 2:1 | ?:? | ? | ?
+60 | 05/07 | Netherlands | Costa Rica | 1:1 | ?:? | ? | ?
+
+**Summary** | - | - | - | - | - | **31/56** | **10/56**
+**Accuracy** | - | - | - | - | - | **55.4%** | **17.9%** 
 
 ### Comments
 
@@ -90,4 +95,3 @@ Match(es) | Comments
 12 | Dropped Bloomberg future predictions. Started using actual results only.
 33 - 48 | Predictions all made on 23/6 as family holiday began.
 49 - 52 | Predictions all made on 28/6 as I travelled to LA for useR! conference.
-
