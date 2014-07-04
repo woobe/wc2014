@@ -82,7 +82,6 @@ Match | Date | Team 1 | Team 2 | Predictions | Results (90 mins) | Correct WDL |
 58 | 04/07 | Brazil | Colombia | 1:1 | ?:? | ? | ?
 59 | 05/07 | Argentina | Belgium | 2:1 | ?:? | ? | ?
 60 | 05/07 | Netherlands | Costa Rica | 1:1 | ?:? | ? | ?
-
 **Summary** | - | - | - | - | - | **31/56** | **10/56**
 **Accuracy** | - | - | - | - | - | **55.4%** | **17.9%** 
 
