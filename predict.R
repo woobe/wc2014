@@ -9,7 +9,7 @@ rm(list=ls())
 ## Core Paramemters
 n_core <- 5
 n_total <- 500
-p_train <- 0.75
+p_train <- 0.667
 
 ## Set seed
 set.seed(1234)

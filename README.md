@@ -1,6 +1,6 @@
 ### Introduction
 
-This repository contains all the data, code and outputs for my World Cup 2014 analysis. It is an experiment to see whether data mining can outperform my friends. So far the data mining approach has the upper hand. It predicted 31/56 (or 55.4%) correct match results (Win/Draw/Lose) and 10/56 (or 17.9%) correct scores.
+This repository contains all the data, code and outputs for my World Cup 2014 analysis. It is an experiment to see whether data mining can outperform my friends. So far the data mining approach has the upper hand. It predicted 32/58 (or 55.2%) correct match results (Win/Draw/Lose) and 10/58 (or 17.2%) correct scores.
 
 ### Data Source
 
@@ -78,12 +78,12 @@ Match | Date | Team 1 | Team 2 | Predictions | Results (90 mins) | Correct WDL |
 54 | 30/06 | Germany | Algeria | 2:1 | 0:0 | No | No 
 55 | 01/07 | Argentina | Switzerland | 3:1 | 0:0 | No | No 
 56 | 01/07 | Belgium | USA | 2:1 | 0:0 | No | No 
-57 | 04/07 | France | Germany | 1:2 | ?:? | ? | ?
-58 | 04/07 | Brazil | Colombia | 1:1 | ?:? | ? | ?
+57 | 04/07 | France | Germany | 1:2 | 0:1 | **Yes** | No
+58 | 04/07 | Brazil | Colombia | 1:1 | 2:1 | No | No
 59 | 05/07 | Argentina | Belgium | 2:1 | ?:? | ? | ?
 60 | 05/07 | Netherlands | Costa Rica | 1:1 | ?:? | ? | ?
-**Summary** | - | - | - | - | - | **31/56** | **10/56**
-**Accuracy** | - | - | - | - | - | **55.4%** | **17.9%** 
+**Summary** | - | - | - | - | - | **32/58** | **10/58**
+**Accuracy** | - | - | - | - | - | **55.2%** | **17.2%** 
 
 ### Comments
 
