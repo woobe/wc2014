@@ -7,7 +7,7 @@ rm(list=ls())
 
 
 ## Core Paramemters
-n_core <- 5
+n_core <- 8
 n_total <- 500
 p_train <- 0.667
 
