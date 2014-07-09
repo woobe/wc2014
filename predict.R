@@ -7,8 +7,8 @@ rm(list=ls())
 
 
 ## Core Paramemters
-n_core <- 8
-n_total <- 500
+n_core <- 6
+n_total <- 50
 p_train <- 0.667
 
 ## Set seed
