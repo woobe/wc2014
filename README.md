@@ -1,12 +1,37 @@
 ### Introduction
 
-This repository contains all the data, code and outputs for my World Cup 2014 analysis. It is an experiment to see whether data mining can outperform my friends. So far the data mining approach has the upper hand. It predicted 35/64 (or 54.7%) correct match results (Win/Draw/Lose) and 10/64 (or 15.6%) correct scores.
+This repository contains all the data, code and outputs for my World Cup 2014 analysis. It is an experiment to see whether data mining can outperform my friends. So far the data mining approach has the upper hand. It predicted 35/64 (or 54.7%) correct match results (Win/Draw/Lose) and 10/64 (or 15.6%) correct scores. 
 
-### Data Source
+<br>
+
+### Results Comparison
+
+Despite the simplicity of the model and lack of in-depth data (e.g. individual players' performance, weather ...), 
+I think that my model still has a clear competitve edge over my friends. 
+Especially on predicting correct scores - which is one of the most difficult tasks in sports analytics. 
+Yet, this comparison is only based on a small sample size of 64 WC matches. 
+In the future, I am going to improve the model and to further investigate its performance for major football leagues in Europe.
+
+<center>
+![compare](http://i.imgur.com/CwmQi5E.png)
+</center>
+
+Tasks | Me | Friend A | Friend B | Friend C | Friend D | Friend E
+|---|----|----|----|----|----|----|
+Correct Results (out of 64)| 35 (54.7%) | 29 (45.3%) | 35 (54.7%) | 25 (39.1%) | 28 (43.8%) | 29 (45.3%)
+Correct Scores (out of 64)| 10 (15.6%) | 4 (6.3%) | 6 (9.4%) | 4 (6.3%) | 4 (6.3%) | 2 (3.1%)
+
+**Source**: <a href="https://docs.google.com/spreadsheets/d/1w4fi9ZI50q9LFT52eUnoUJAVDnTpfkH5Nq8HJzA86jg/edit?usp=sharing" target="_blank">A copy of the Google Spreadsheet we used.</a>
+
+<br>
+
+### Data Sources
 
 1. http://fivethirtyeight.com/interactives/world-cup/
 2. http://www.bloomberg.com/visual-data/world-cup/
 3. https://www.betfair.com/sport
+
+<br>
 
 ### Methods
 
@@ -14,17 +39,18 @@ This repository contains all the data, code and outputs for my World Cup 2014 an
 - The predicted results are median values from multiple model predictions. Each model consists of four common regression mini models (Random Forest, SVMs, Cubist and KNN) which are trained with bootstrapped samples and blended for better genearlisation.
 - Early on in the tourament, the future match results predicted by Bloomberg had been used as training data as there were not enough actual results.
 
+<br>
 
 ### Results
 
 **Notes**: more detailed results including the distribution of predictions results can be found in the **output** folder.
-
+has a competitve edge overhas a competitve edge over
 
 Match | Date | Team 1 | Team 2 | Predictions | Results (90 mins) | Correct WDL | Correct Score 
 ------|------|--------|--------|-------------|---------|--------------|---------------
 1 | 12/06 | Brazil | Croatia | 4:0 | 3:1 | **Yes** | No 
 2 | 13/06 | Mexico | Cameroon | 1:0 | 1:0 | **Yes** | **Yes** 
-3 | 13/06 | Spain | Netherlands | 1:0 | 1:5 | No | No 
+3 | 13/06 | Spain | Netherlands | 1:0 | 1:5 | No | No has a competitve edge over
 4 | 13/06 | Chile | Australia | 1:0 | 3:1 | **Yes** | No 
 5 | 14/06 | Colombia | Greece | 1:0 | 3:0 | **Yes** | No 
 6 | 14/06 | Uruguay | Costa Rica | 2:0 | 1:3 | No | No 
@@ -89,6 +115,8 @@ Match | Date | Team 1 | Team 2 | Predictions | Results (90 mins) | Correct WDL |
 **Summary** | - | - | - | - | - | **35/64** | **10/64**
 **Accuracy** | - | - | - | - | - | **54.7%** | **15.6%** 
 
+<br>
+
 ### Comments
 
 Match(es) | Comments
@@ -98,3 +126,5 @@ Match(es) | Comments
 12 | Dropped Bloomberg future predictions. Started using actual results only.
 33 - 48 | Predictions all made on 23/6 as family holiday began.
 49 - 52 | Predictions all made on 28/6 as I travelled to LA for useR! conference.
+
+<br>
