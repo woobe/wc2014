@@ -50,7 +50,7 @@ Match | Date | Team 1 | Team 2 | Predictions | Results (90 mins) | Correct WDL |
 ------|------|--------|--------|-------------|---------|--------------|---------------
 1 | 12/06 | Brazil | Croatia | 4:0 | 3:1 | **Yes** | No 
 2 | 13/06 | Mexico | Cameroon | 1:0 | 1:0 | **Yes** | **Yes** 
-3 | 13/06 | Spain | Netherlands | 1:0 | 1:5 | No | No has a competitve edge over
+3 | 13/06 | Spain | Netherlands | 1:0 | 1:5 | No | No
 4 | 13/06 | Chile | Australia | 1:0 | 3:1 | **Yes** | No 
 5 | 14/06 | Colombia | Greece | 1:0 | 3:0 | **Yes** | No 
 6 | 14/06 | Uruguay | Costa Rica | 2:0 | 1:3 | No | No 
