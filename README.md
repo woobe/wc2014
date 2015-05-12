@@ -44,7 +44,6 @@ Correct Scores (out of 64)| 10 (15.6%) | 4 (6.3%) | 6 (9.4%) | 4 (6.3%) | 4 (6.3
 ### Results
 
 **Notes**: more detailed results including the distribution of predictions results can be found in the **output** folder.
-has a competitve edge overhas a competitve edge over
 
 Match | Date | Team 1 | Team 2 | Predictions | Results (90 mins) | Correct WDL | Correct Score 
 ------|------|--------|--------|-------------|---------|--------------|---------------
